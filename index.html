@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LongWalk VIP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: #121212;
+            --gold-color: #D4AF37;
+            --gold-gradient: linear-gradient(135deg, #D4AF37 0%, #AA8E2C 100%);
+            --text-color: #ffffff;
+            --muted-text: #888888;
+            --border-color: #333333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Outfit', sans-serif; }
+        
+        body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+        /* AUTHENTICATION SCREEN */
+        #auth-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 2000; display: flex; flex-direction: column;
+            justify-content: center; padding: 30px;
+            background-image: radial-gradient(circle at top right, #222, #000);
+        }
+        
+        .auth-box {
+            background: rgba(20, 20, 20, 0.95); padding: 30px; border-radius: 20px;
+            border: 1px solid var(--gold-color); box-shadow: 0 0 40px rgba(212, 175, 55, 0.15);
+            text-align: center;
+        }
+
+        .auth-logo { font-size: 28px; font-weight: 800; color: var(--gold-color); margin-bottom: 10px; letter-spacing: 2px; }
+        .auth-sub { font-size: 12px; color: var(--muted-text); margin-bottom: 30px; text-transform: uppercase; }
+
+        .vip-input {
+            width: 100%; padding: 15px; background: #080808; border: 1px solid var(--border-color);
+            color: white; border-radius: 12px; margin-bottom: 15px; font-size: 15px; outline: none; transition: 0.3s;
+        }
+        .vip-input:focus { border-color: var(--gold-color); }
+        .vip-input:read-only { background: #1a1a1a; color: #666; cursor: not-allowed; }
+
+        .btn-vip {
+            width: 100%; padding: 16px; background: var(--gold-gradient); color: #000;
+            border: none; border-radius: 12px; font-weight: 800; font-size: 16px;
+            cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+        }
+
+        /* DASHBOARD LAYOUT */
+        #app-screen { display: none; height: 100%; flex-direction: column; }
+        
+        header {
+            padding: 20px; background: var(--card-bg); border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .user-greet { font-size: 14px; color: var(--muted-text); }
+        .user-name { font-size: 18px; font-weight: 700; color: var(--gold-color); }
+
+        main { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 90px; }
+
+        /* COMPONENTS */
+        .balance-card {
+            background: linear-gradient(135deg, #1f1f1f, #000);
+            border: 1px solid var(--gold-color); border-radius: 18px; padding: 25px;
+            text-align: center; margin-bottom: 25px; position: relative; overflow: hidden;
+        }
+        .balance-card h1 { font-size: 36px; color: var(--gold-color); margin: 5px 0; font-weight: 700; }
+        .balance-card p { font-size: 12px; color: #aaa; letter-spacing: 2px; text-transform: uppercase; }
+
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .dash-item {
+            background: var(--card-bg); padding: 15px; border-radius: 15px; border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .dash-item h3 { font-size: 20px; color: white; margin-bottom: 5px; }
+        .dash-item p { font-size: 11px; color: var(--muted-text); text-transform: uppercase; }
+
+        .section-header {
+            font-size: 16px; color: white; margin-bottom: 15px; font-weight: 600;
+            border-left: 4px solid var(--gold-color); padding-left: 12px;
+        }
+
+        /* PLAN CARDS */
+        .plan-card {
+            background: #111; border: 1px solid var(--border-color); border-radius: 15px;
+            padding: 0; margin-bottom: 15px; overflow: hidden;
+        }
+        .pc-header {
+            background: #1a1a1a; padding: 15px; display: flex; justify-content: space-between;
+            align-items: center; border-bottom: 1px solid var(--border-color);
+        }
+        .pc-body { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .pc-info small { color: #666; font-size: 11px; display: block; }
+        .pc-info b { color: white; font-size: 15px; }
+        .pc-btn {
+            width: 100%; padding: 14px; background: var(--gold-color); border: none;
+            font-weight: 800; cursor: pointer; color: black;
+        }
+
+        /* DEPOSIT/WITHDRAW FORMS */
+        .form-container { background: var(--card-bg); padding: 20px; border-radius: 15px; border: 1px solid var(--border-color); }
+        .form-label { display: block; color: var(--muted-text); font-size: 12px; margin-bottom: 8px; margin-top: 15px; }
+        .deposit-info-box {
+            background: rgba(212, 175, 55, 0.15); border: 1px dashed var(--gold-color);
+            padding: 15px; border-radius: 10px; text-align: center; margin: 15px 0; display: none;
+        }
+        .deposit-number { font-size: 22px; color: var(--gold-color); font-weight: bold; margin-top: 5px; user-select: all; }
+
+        /* NAVIGATION BAR */
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%; height: 75px; background: #111;
+            display: flex; justify-content: space-around; align-items: center;
+            border-top: 1px solid var(--border-color); border-top-left-radius: 20px; border-top-right-radius: 20px;
+            z-index: 100;
+        }
+        .nav-link { display: flex; flex-direction: column; align-items: center; color: #555; font-size: 10px; width: 20%; text-decoration: none; }
+        .nav-link i { font-size: 22px; margin-bottom: 5px; transition: 0.2s; }
+        .nav-link.active { color: var(--gold-color); }
+        .nav-link.active i { transform: translateY(-5px); }
+        
+        .nav-center {
+            width: 60px; height: 60px; background: var(--gold-gradient); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; margin-top: -35px;
+            border: 6px solid var(--bg-color); color: black; box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+        }
+        .nav-center i { font-size: 24px; margin: 0; }
+
+        .toast {
+            position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
+            background: var(--gold-color); color: black; padding: 12px 25px;
+            border-radius: 30px; font-weight: bold; font-size: 13px; opacity: 0;
+            pointer-events: none; transition: 0.3s; z-index: 5000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .toast.show { opacity: 1; top: 60px; }
+    </style>
+</head>
+<body>
+
+    <div class="toast" id="toast">Welcome to VIP</div>
+
+    <!-- AUTH SECTION -->
+    <div id="auth-screen">
+        <!-- LOGIN -->
+        <div class="auth-box" id="login-box">
+            <div class="auth-logo">LONGWALK</div>
+            <p class="auth-sub">VIP MEMBER AREA</p>
+            <input id="l-user" class="vip-input" placeholder="Username">
+            <input id="l-pass" class="vip-input" type="password" placeholder="Password">
+            <button class="btn-vip" onclick="login()">LOGIN NOW</button>
+            <p style="margin-top:20px; font-size:12px; color:#666;">
+                No Account? <b style="color:white; cursor:pointer;" onclick="toggleAuth()">Register Here</b>
+            </p>
+        </div>
+
+        <!-- REGISTER -->
+        <div class="auth-box" id="reg-box" style="display:none;">
+            <div class="auth-logo">JOIN VIP</div>
+            <p class="auth-sub">CREATE NEW ACCOUNT</p>
+            <input id="r-user" class="vip-input" placeholder="Username">
+            <input id="r-pass" class="vip-input" type="password" placeholder="Password">
+            <!-- LOCKED REFERRAL CODE INPUT -->
+            <input id="r-code" class="vip-input" placeholder="Referral Code">
+            <button class="btn-vip" onclick="register()">CREATE ACCOUNT</button>
+            <p style="margin-top:20px; font-size:12px; color:#666;">
+                Have Account? <b style="color:white; cursor:pointer;" onclick="toggleAuth()">Login Here</b>
+            </p>
+        </div>
+    </div>
+
+    <!-- MAIN APP SECTION -->
+    <div id="app-screen">
+        <header>
+            <div>
+                <div class="user-greet">Welcome Back,</div>
+                <div class="user-name" id="display-name">Loading...</div>
+            </div>
+            <i class="fas fa-power-off" style="font-size:20px; color:#666; cursor:pointer;" onclick="logout()"></i>
+        </header>
+
+        <main id="main-content">
+            <!-- CONTENT INJECTED BY JS -->
+        </main>
+
+        <nav class="bottom-nav">
+            <div class="nav-link active" onclick="nav('home')"><i class="fas fa-home"></i>HOME</div>
+            <div class="nav-link" onclick="nav('plans')"><i class="fas fa-layer-group"></i>PLANS</div>
+            <div class="nav-center" onclick="nav('deposit')"><i class="fas fa-wallet"></i></div>
+            <div class="nav-link" onclick="nav('withdraw')"><i class="fas fa-money-bill-wave"></i>CASHOUT</div>
+            <div class="nav-link" onclick="nav('team')"><i class="fas fa-users"></i>TEAM</div>
+        </nav>
+    </div>
+
+    <!-- FIREBASE SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script>
+        // ⚡ PASTE YOUR FIREBASE CONFIG HERE
+        const firebaseConfig = {
+  apiKey: "AIzaSyAYhyC7Syk08T_2qFGqxM-ZXppnOFHgUks",
+  authDomain: "alll-fb1b1.firebaseapp.com",
+  databaseURL: "https://alll-fb1b1-default-rtdb.firebaseio.com",
+  projectId: "alll-fb1b1",
+  storageBucket: "",
+  messagingSenderId: "636073211236",
+  appId: "1:636073211236:web:6a9da6ac152bbb0fef7671",
+  measurementId: "G-NXWKQ4E4SS"
+};
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let uid = localStorage.getItem('lw_vip_uid');
+        let user = null;
+
+        // --- 1. SMART REFERRAL LOGIC (Correct Implementation) ---
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const refCode = urlParams.get('ref');
+            
+            if(refCode) {
+                // Force Logout if logged in
+                if(uid) {
+                    localStorage.removeItem('lw_vip_uid');
+                    uid = null;
+                }
+                
+                // Show Register Screen & Hide Login
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('reg-box').style.display = 'block';
+                
+                // Fill and Lock Code
+                const input = document.getElementById('r-code');
+                input.value = refCode;
+                input.readOnly = true;
+            }
+        })();
+
+        // --- AUTHENTICATION ---
+        function toggleAuth() {
+            const l = document.getElementById('login-box');
+            const r = document.getElementById('reg-box');
+            if(l.style.display==='none'){ l.style.display='block'; r.style.display='none'; }
+            else { l.style.display='none'; r.style.display='block'; }
+        }
+
+        function register() {
+            const u = document.getElementById('r-user').value;
+            const p = document.getElementById('r-pass').value;
+            const c = document.getElementById('r-code').value;
+            
+            if(!u || !p) return showToast("Please fill all fields");
+            
+            const newId = 'u' + Date.now();
+            const myCode = Math.floor(10000 + Math.random() * 90000);
+            
+            db.ref('users/' + newId).set({
+                username: u,
+                password: p,
+                refBy: c || 'admin',
+                refCode: myCode,
+                balance: 0,
+                activePlan: 'None'
+            }).then(() => {
+                localStorage.setItem('lw_vip_uid', newId);
+                // Redirect to clean URL
+                window.location.href = window.location.pathname;
+            });
+        }
+
+        function login() {
+            const u = document.getElementById('l-user').value;
+            const p = document.getElementById('l-pass').value;
+            
+            db.ref('users').orderByChild('username').equalTo(u).once('value', snapshot => {
+                let found = false;
+                snapshot.forEach(child => {
+                    const val = child.val();
+                    if(val.password === p) {
+                        if(val.isBlocked) {
+                            showToast("Account Blocked by Admin");
+                            return;
+                        }
+                        localStorage.setItem('lw_vip_uid', child.key);
+                        location.reload();
+                        found = true;
+                    }
+                });
+                if(!found) showToast("Invalid Credentials");
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('lw_vip_uid');
+            window.location.href = window.location.pathname;
+        }
+
+        // --- APP INITIALIZATION ---
+        if(uid) {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'flex';
+            
+            // Realtime User Data Listener
+            db.ref('users/' + uid).on('value', snapshot => {
+                user = snapshot.val();
+                if(!user) logout(); // If user deleted by admin
+                if(user.isBlocked) { alert("You are blocked"); logout(); }
+                
+                document.getElementById('display-name').innerText = user.username;
+            });
+
+            // Start Auto Profit Calculation
+            setInterval(checkDailyProfit, 60000); // Check every minute
+            
+            // Load Home by default
+            nav('home');
+        }
+
+        // --- NAVIGATION LOGIC ---
+        function nav(page) {
+            const container = document.getElementById('main-content');
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            // Highlight logic omitted for brevity
+            
+            if(page === 'home') {
+                container.innerHTML = `<div style="text-align:center; margin-top:50px; color:white;">Loading Statistics...</div>`;
+                renderDashboard(container);
+            }
+            else if(page === 'deposit') {
+                container.innerHTML = `
+                    <div class="section-header">Add Funds</div>
+                    <div class="form-container">
+                        <label class="form-label">Payment Method</label>
+                        <select id="dep-method" class="vip-input" onchange="fetchDepositNumber()">
+                            <option value="">Select Gateway</option>
+                            <option value="easypaisa">EasyPaisa</option>
+                            <option value="jazzcash">JazzCash</option>
+                            <option value="trx">TRX (Tron)</option>
+                        </select>
+                        
+                        <div id="dep-info" class="deposit-info-box">
+                            <small>Send Payment To:</small>
+                            <div id="dep-number" class="deposit-number">Loading...</div>
+                        </div>
+
+                        <label class="form-label">Amount (PKR)</label>
+                        <input type="number" id="dep-amount" class="vip-input" placeholder="Enter Amount">
+                        
+                        <label class="form-label">Transaction ID (TrxID)</label>
+                        <input type="text" id="dep-trx" class="vip-input" placeholder="Paste ID here">
+                        
+                        <button class="btn-vip" style="margin-top:10px;" onclick="submitDeposit()">SUBMIT DEPOSIT</button>
+                    </div>
+                    <p style="text-align:center; color:#555; font-size:11px; margin-top:15px;">
+                        Funds will be added automatically after admin verification.
+                    </p>
+                `;
+            }
+            else if(page === 'withdraw') {
+                container.innerHTML = `
+                    <div class="section-header">Withdraw Funds</div>
+                    <div class="form-container">
+                        <label class="form-label">Select Method</label>
+                        <select id="wd-method" class="vip-input">
+                            <option value="easypaisa">EasyPaisa</option>
+                            <option value="jazzcash">JazzCash</option>
+                            <option value="trx">TRX (Tron)</option>
+                        </select>
+
+                        <label class="form-label">Account Holder Name</label>
+                        <input type="text" id="wd-name" class="vip-input" placeholder="e.g. Ali Khan">
+
+                        <label class="form-label">Account Number</label>
+                        <input type="text" id="wd-num" class="vip-input" placeholder="03xxxxxxxxx">
+
+                        <label class="form-label">Amount (PKR)</label>
+                        <input type="number" id="wd-amt" class="vip-input" placeholder="Min 100">
+
+                        <button class="btn-vip" style="margin-top:10px;" onclick="submitWithdraw()">REQUEST WITHDRAW</button>
+                    </div>
+                `;
+            }
+            else if(page === 'plans') {
+                container.innerHTML = `<div class="section-header">Investment Plans</div><div id="plans-list">Loading...</div>`;
+                renderPlans();
+            }
+            else if(page === 'team') {
+                const link = window.location.origin + window.location.pathname + "?ref=" + user.refCode;
+                container.innerHTML = `
+                    <div class="section-header">My Team</div>
+                    <div class="form-container" style="text-align:center;">
+                        <label class="form-label">Your Referral Link</label>
+                        <input class="vip-input" style="text-align:center;" value="${link}" readonly>
+                        <button class="btn-vip" style="padding:10px 20px; font-size:12px; width:auto;" onclick="showToast('Link Copied!')">COPY LINK</button>
+                    </div>
+                    <div class="section-header" style="margin-top:20px;">Team Members</div>
+                    <div id="team-list-container">Loading...</div>
+                `;
+                renderTeam();
+            }
+        }
+
+        // --- DASHBOARD LOGIC ---
+        function renderDashboard(container) {
+            // Fetch Transactions for Stats
+            db.ref('transactions').orderByChild('userId').equalTo(uid).once('value', snap => {
+                let totalDep = 0, totalWd = 0, pendingWd = 0;
+                
+                snap.forEach(c => {
+                    const t = c.val();
+                    if(t.type === 'deposit' && t.status === 'approved') totalDep += parseFloat(t.amount);
+                    if(t.type === 'withdraw' && t.status === 'approved') totalWd += parseFloat(t.amount);
+                    if(t.type === 'withdraw' && t.status === 'pending') pendingWd += parseFloat(t.amount);
+                });
+
+                // Fetch Team Count
+                db.ref('users').orderByChild('refBy').equalTo(user.refCode.toString()).once('value', tSnap => {
+                    container.innerHTML = `
+                        <div class="balance-card">
+                            <p>AVAILABLE BALANCE</p>
+                            <h1>PKR ${parseFloat(user.balance).toFixed(2)}</h1>
+                        </div>
+
+                        <div class="dashboard-grid">
+                            <div class="dash-item"><h3>${totalDep}</h3><p>Total Deposit</p></div>
+                            <div class="dash-item"><h3>${totalWd}</h3><p>Total Withdraw</p></div>
+                            <div class="dash-item"><h3 style="color:var(--gold-color)">${pendingWd}</h3><p>Pending W/D</p></div>
+                            <div class="dash-item"><h3>${tSnap.numChildren()}</h3><p>Team Size</p></div>
+                        </div>
+
+                        <div class="section-header">Active Plans</div>
+                        <div id="my-active-plans"></div>
+                    `;
+                    renderMyActivePlans();
+                });
+            });
+        }
+
+        // --- DEPOSIT FUNCTIONS ---
+        function fetchDepositNumber() {
+            const method = document.getElementById('dep-method').value;
+            const box = document.getElementById('dep-info');
+            const numText = document.getElementById('dep-number');
+            
+            if(!method) { box.style.display = 'none'; return; }
+            
+            // Realtime Fetch from Admin Settings
+            db.ref('settings/payment/' + method).once('value', snap => {
+                box.style.display = 'block';
+                numText.innerText = snap.val() || "Contact Admin";
+            });
+        }
+
+        function submitDeposit() {
+            const method = document.getElementById('dep-method').value;
+            const amount = document.getElementById('dep-amount').value;
+            const trx = document.getElementById('dep-trx').value;
+
+            if(!method || !amount || !trx) return showToast("Fill all details");
+
+            db.ref('transactions').push({
+                userId: uid,
+                username: user.username,
+                type: 'deposit',
+                amount: amount,
+                details: trx,
+                method: method,
+                status: 'pending',
+                date: Date.now()
+            }).then(() => {
+                showToast("Deposit Submitted Successfully!");
+                nav('home');
+            });
+        }
+
+        // --- WITHDRAWAL FUNCTIONS (WITH BALANCE DEDUCTION) ---
+        function submitWithdraw() {
+            const method = document.getElementById('wd-method').value;
+            const name = document.getElementById('wd-name').value;
+            const num = document.getElementById('wd-num').value;
+            const amount = parseFloat(document.getElementById('wd-amt').value);
+
+            if(!name || !num || !amount) return showToast("Fill all details");
+            if(amount > user.balance) return showToast("Insufficient Balance");
+
+            // 1. DEDUCT BALANCE IMMEDIATELY
+            db.ref('users/' + uid + '/balance').set(user.balance - amount);
+
+            // 2. CREATE TRANSACTION REQUEST
+            db.ref('transactions').push({
+                userId: uid,
+                username: user.username,
+                type: 'withdraw',
+                amount: amount,
+                method: method,
+                details: `${name} (${num})`,
+                status: 'pending',
+                date: Date.now()
+            }).then(() => {
+                showToast("Withdrawal Requested!");
+                nav('home');
+            });
+        }
+
+        // --- PLANS & INVESTMENT ---
+        function renderPlans() {
+            db.ref('plans').once('value', snap => {
+                const list = document.getElementById('plans-list');
+                list.innerHTML = '';
+                snap.forEach(child => {
+                    const p = child.val();
+                    list.innerHTML += `
+                        <div class="plan-card">
+                            <div class="pc-header">
+                                <b style="color:var(--gold-color); font-size:18px;">${p.name}</b>
+                                <span style="color:#888; font-size:12px;">${p.duration} Days</span>
+                            </div>
+                            <div class="pc-body">
+                                <div class="pc-info"><small>Price</small><b>${p.price}</b></div>
+                                <div class="pc-info"><small>Daily</small><b>${p.dailyAmount}</b></div>
+                                <div class="pc-info"><small>Total</small><b>${p.totalReturn}</b></div>
+                                <div class="pc-info"><small>ROI</small><b style="color:var(--gold-color)">High</b></div>
+                            </div>
+                            <button class="pc-btn" onclick="buyPlan('${child.key}', '${p.name}', ${p.price}, ${p.dailyAmount}, ${p.duration}, ${p.totalReturn})">INVEST NOW</button>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        function buyPlan(key, name, price, daily, duration, total) {
+            if(user.balance < price) return showToast("Insufficient Balance");
+            
+            const now = Date.now();
+            
+            // Deduct Balance
+            db.ref('users/' + uid + '/balance').set(user.balance - price);
+            // Update Active Plan Tag
+            db.ref('users/' + uid + '/activePlan').set(name);
+            
+            // Add Plan to User
+            db.ref('user_plans/' + uid).push({
+                name: name,
+                daily: daily,
+                daysTotal: duration,
+                daysPassed: 0,
+                totalReturn: total,
+                start: now,
+                lastClaim: now
+            });
+            
+            showToast("Plan Activated Successfully!");
+            nav('home');
+        }
+
+        // --- TEAM & ACTIVE PLANS ---
+        function renderTeam() {
+            db.ref('users').orderByChild('refBy').equalTo(user.refCode.toString()).once('value', snap => {
+                const list = document.getElementById('team-list-container');
+                list.innerHTML = '';
+                if(!snap.exists()) { list.innerHTML = '<p style="text-align:center; color:#555;">No members yet.</p>'; return; }
+                
+                snap.forEach(child => {
+                    const u = child.val();
+                    list.innerHTML += `
+                        <div style="background:#1a1a1a; padding:15px; border-radius:10px; margin-bottom:10px; border:1px solid #333; display:flex; justify-content:space-between;">
+                            <span style="color:white; font-weight:bold;">${u.username}</span>
+                            <span style="color:var(--gold-color); font-size:12px;">${u.activePlan || 'Free Member'}</span>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        function renderMyActivePlans() {
+            db.ref('user_plans/' + uid).on('value', snap => {
+                const div = document.getElementById('my-active-plans');
+                if(!div) return;
+                div.innerHTML = '';
+                if(!snap.exists()) { div.innerHTML = '<p style="text-align:center; color:#555; font-size:12px;">No active plans</p>'; return; }
+                
+                snap.forEach(child => {
+                    const p = child.val();
+                    div.innerHTML += `
+                        <div style="background:#111; padding:15px; border-radius:10px; margin-bottom:10px; border-left:4px solid var(--gold-color);">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                <b style="color:white;">${p.name}</b>
+                                <span style="color:var(--gold-color); font-size:12px;">${p.daysPassed}/${p.daysTotal} Days</span>
+                            </div>
+                            <div style="font-size:11px; color:#888;">
+                                Earned: <span style="color:white;">${p.daily * p.daysPassed}</span> / ${p.totalReturn}
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        // --- AUTO PROFIT CHECKER ---
+        function checkDailyProfit() {
+            if(!uid) return;
+            const now = Date.now();
+            db.ref('user_plans/' + uid).once('value', snap => {
+                snap.forEach(child => {
+                    const p = child.val();
+                    // Check if 24 hours passed (86400000 ms) AND plan is not finished
+                    if(now - p.lastClaim >= 86400000 && p.daysPassed < p.daysTotal) {
+                        // Add Daily Profit
+                        db.ref('users/' + uid + '/balance').transaction(b => (b || 0) + p.daily);
+                        // Update Plan Progress
+                        db.ref('user_plans/' + uid + '/' + child.key).update({
+                            daysPassed: p.daysPassed + 1,
+                            lastClaim: now
+                        });
+                    }
+                });
+            });
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
